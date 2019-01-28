@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+
+import sys
+
+
+def print_total(result, value):
+    total = 0
+
+    for i in range(0, len(result)):
+        total += float(result[i] * float(value[i]))
+
+    print("Total production value: $%.2f" % total)
+
+
+def print_final(matrix, tons, value):
+
+    print("Resources:", tons[0], "F1,", tons[1], "F2,", tons[2], "F3,", tons[3], "F4")
+    print("")
+    print("Oat: 0 units at $" + value[0] + "/unit")
+    print("Wheat: %.2f" % matrix[0][9] + " units at $" + value[1] + "/unit")
+    print("Corn: %.2f" % matrix[1][9] + " units at $" + value[2] + "/unit")
+    print("Barley: %.2f" % + matrix[2][9] + " units at $" + value[3] + "/unit")
+    print("Soy: %.2f" % + matrix[3][9] + " units at $" + value[4] + "/unit")
+    print("")
+    result = float(matrix[4][9]) * -1
+    print("Total production value: $%.2f" % result)
+
+
+def check_end(matrix):
+    for i in range(0, len(matrix[4])):
+        if matrix[4][i] > 0:
+            return False
+    return True
+
+
+def calc_total(tab):
+    count = 0
+    for elem in tab:
+        count += int(elem)
+    return count
+
+
+def find_pivot(matrix):
+    pivot = [0, 0]
+    line = matrix[4]
+
+    max = find_max(line)
+
+    offset = -1
+    tmp = -1
+    for i in range(0, 4):
+        if matrix[i][max[1]] > 0:
+            if tmp == -1:
+                val = matrix[i][max[1]]
+                money = matrix[i][9]
+                tmp = money / val
+                offset = i
+            else:
+                val = matrix[i][max[1]]
+                money = matrix[i][9]
+                res = money / val
+                if tmp > res:
+                    tmp = res
+                    offset = i
+    return(offset, max[1])
+
+
+def find_max(line):
+    tmp = line[0]
+    offset = 0
+    for i in range(1, len(line)):
+        if line[i] > tmp:
+            tmp = line[i]
+            offset = i
+    return tmp, offset
+
+
+def print_matrix(matrix):
+    for i in matrix:
+        for elem in i:
+            print("%.2f" % float(elem), end="\t")
+        print("")
+
+
+def algo(tons, value, matrix):
+    while not check_end(matrix):
+        lines = []
+        max_val = find_max(matrix[4])
+        pivot = find_pivot(matrix)
+        for i in range(0, len(matrix) - 1):
+            if matrix[i][max_val[1]] > 0:
+                lines.append(i)
+        pivot_value = float(matrix[pivot[0]][pivot[1]])
+        for i in range(0, 10):
+            matrix[pivot[0]][i] = float(matrix[pivot[0]][i] / pivot_value)
+
+        for elem in lines:
+            if int(elem) != pivot[0]:
+                val = matrix[elem][pivot[1]]
+                for i in range(0, len(matrix[int(elem)])):
+                    if int(matrix[pivot[0]][i] != 0):
+                        matrix[elem][i] = matrix[elem][i] - matrix[pivot[0]][i] * val
+        for i in range(0, len(matrix[4])):
+            matrix[4][i] = matrix[4][i] - matrix[pivot[0]][i] * max_val[0]
+    return matrix
+
+
+def convert_array_to_float(tons):
+    new_array = []
+
+    for elem in tons:
+        new_array.append(float(elem))
+    return new_array
+
+
+def matrix_(tons, value):
+    float_tons = convert_array_to_float(tons)
+    float_value = convert_array_to_float(value)
+    tmp = [
+        [1, 0, 1, 0, 2, 1, 0, 0, 0, float_tons[0]],
+        [1, 2, 0, 1, 0, 0, 1, 0, 0, float_tons[1]],
+        [2, 1, 0, 1, 0, 0, 0, 1, 0, float_tons[2]],
+        [0, 0, 3, 1, 2, 0, 0, 0, 1, float_tons[3]],
+        [float_value[0], float_value[1], float_value[2], float_value[3], float_value[4], 0, 0, 0, 0, 0]
+    ]
+    return tmp
+
+
+def core():
+    tons = sys.argv[1:5]
+    value = sys.argv[5:]
+    matrix = algo(tons, value, matrix_(tons, value))
+    print_final(matrix, tons, value)
+
+
+def print_helper():
+    print("USAGE")
+    print("\t./307multigrains n1 n2 n3 n4 po pw pc pb ps")
+    print("")
+    print("DESCRIPTION")
+    print("\tn1 number of tons of fertilizer F1")
+    print("\tn2 number of tons of fertilizer F2")
+    print("\tn3 number of tons of fertilizer F3")
+    print("\tn4 number of tons of fertilizer F4")
+    print("\tpo price of one unit of oat")
+    print("\tpw price of one unit of wheat")
+    print("\tpc price of one unit of corn")
+    print("\tpb price of one unit of barley")
+    print("\tps price of one unit of soy")
+
+
+def error_handling():
+    for i in range(1, len(sys.argv)):
+        if not sys.argv[i].isdigit():
+            return -1
+        if int(sys.argv[i]) < 0 :
+            return -1
+    return 0
+
+
+if __name__ == '__main__':
+    if len(sys.argv) == 2 and sys.argv[1] == "-h":
+        print_helper()
+        exit()
+    elif len(sys.argv) == 10:
+        if error_handling() == -1:
+            exit(84)
+        core()
+    else:
+        exit(84)

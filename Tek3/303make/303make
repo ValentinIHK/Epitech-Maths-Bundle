@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+
+import sys
+import re
+
+
+class Make:
+    def __init__(self):
+        self.dependence = {}
+        self.compilation = {}
+        self.separator = ":"
+        self.matrix = [[]]
+
+    def read_file(self, filename):
+        try:
+            with open(filename) as rawFile:
+                data = rawFile.readlines()
+                if not len(data):
+                    print("Empty file.")
+                    exit(84)
+                for line in data:
+                    if line.find(self.separator) != -1:
+                        last_line = line.split(":")[0]
+                        self.compilation[last_line] = []
+                        line = re.sub('\s+', ' ', line)
+                        line = line.strip()
+                        line = line.replace(self.separator, "")
+                        tmp = line.split(" ")
+                        cpt = 0
+                        last_name = ""
+                        for line in tmp:
+                            if cpt == 0:
+                                cpt = cpt + 1
+                                last_name = line
+                                self.dependence[last_name] = []
+                            elif line.find("\n") != -1:
+                                tmp = line[:line.rfind('\'')]
+                                self.dependence[tmp] = []
+                                self.dependence[last_name].append(line[:line.rfind('\'')])
+                                cpt = 0
+                            else:
+                                self.dependence[line] = []
+                                self.dependence[last_name].append(line)
+                    elif line == "\n":
+                        continue
+                    else:
+                        self.compilation[last_line].append(line.strip())
+        except:
+            print("File do not exist")
+            exit(84)
+
+    def print_matrix(self):
+        cpt = 0
+        for x in sorted(self.dependence.keys()):
+            self.matrix.append([])
+            for x2 in sorted(self.dependence.keys()):
+                if x2 in self.dependence[x]:
+                    self.matrix[cpt].append('1')
+                else:
+                    self.matrix[cpt].append('0')
+            print ('[' + ' '.join(self.matrix[cpt]) + ']')
+            cpt = cpt + 1
+        print()
+
+
+
+    # ICI ICHKOUR BOLOSS BOSSE UN PEU FDP
+    def print_dependecie(self):
+        keys = []
+        for i in self.dependence.keys():
+            keys.append(i)
+        keys.sort()
+        dependences1 = []
+        dependences2 = []
+        for i in range(0, len(self.matrix) - 1):
+            for j in range(0, len(self.matrix) - 1):
+                if (self.matrix[i][j] == '1'):
+                    dependences1 = []
+                    dependences1.append(keys[j])
+                    recursive_dependecies(self.matrix, i, keys, dependences1)
+                    dependences2.append(dependences1)
+        printDependences(dependences2)
+
+    def find_dependecies(self, file, tab=None):
+        if tab is None:
+            tab = []
+        for x in sorted(self.dependence.keys()):
+            for s in self.dependence[x]:
+                if s == file:
+                    tab.append('\n'.join(self.compilation[x])) # ici
+                    self.find_dependecies(x, tab)
+                    break
+        return tab
+
+    def check_input(self, input):
+        check = False
+        for x in self.dependence.keys():
+            if input == x:
+                check = True
+                break
+            for s in self.dependence[x]:
+                if s == input:
+                    check = True
+                    break
+        if not check:
+            print("Input file do not exist")
+            exit(84)
+
+    def print_compilation(self):
+        file = sys.argv[2] # ici
+        self.check_input(file)
+        tab = self.find_dependecies(file)
+        try:
+            tab.remove('')
+        except:
+            pass
+        if not tab:
+            print()
+            return
+        tab = set(list(tab))
+        for x in sorted(tab):
+            print(x)
+
+
+def printDependences(dependences):
+    final = []
+    for elem in dependences:
+        str = ''
+        for i in range(0, len(elem)):
+            str += elem[i]
+            if (i < len(elem) - 1):
+                str += " -> "
+        final.append(str)
+    final.sort()
+    for f in final:
+        print(f)
+
+
+def usage():
+    print("USAGE\n\t./303make makefile [file]")
+    exit(84)
+
+
+def recursive_dependecies(matrix, j, keys, dependences):
+    dependences.append(keys[j])
+    for i in range(0, len(matrix) - 1):
+        if (matrix[i][j] == '1'):
+            recursive_dependecies(matrix, i, keys, dependences)
+
+
+if __name__ == '__main__':
+    make = Make()
+    if 2 <= len(sys.argv) <= 3:
+        make.read_file(sys.argv[1])
+        if len(sys.argv) == 2:
+            make.print_matrix()
+            make.print_dependecie()
+        elif len(sys.argv) == 3:
+            make.print_compilation()
+    else:
+        usage()

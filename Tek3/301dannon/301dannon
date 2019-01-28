@@ -1,0 +1,222 @@
+#!/bin/python3
+
+import sys
+
+sys.setrecursionlimit(1000000)
+
+gb_count = 0
+fusion_count = 0
+
+def print_helper():
+    print("USAGE")
+    print("\t\t./301dannon file")
+    print("DESCRIPTION")
+    print("\t\tfile\tfile that contains the numbers to be sorted, seperated by spaces")
+    return 0
+
+
+def get_nb_of_elements(elements):
+    count = 0
+    for i in range(0, len(elements)):
+            count += len(elements[i])
+    print(count, end=" ")
+    if count == 0 or count == 1:
+        print("element")
+        return 0
+    else:
+        print("elements")
+        return 0
+
+
+def select_sort(el):
+    elements = el[:]
+    comp = 0
+    nb = len(elements)
+    for curr in range(0, nb):
+        min = curr
+        for i in range(curr + 1, len(elements)):
+            comp += 1
+            if float(elements[i]) < float(elements[min]):
+                min = i
+        tmp = elements[curr]
+        elements[curr] = elements[min]
+        elements[min] = tmp
+    print("select sort: ", end="")
+    print(comp, end=" ")
+    if comp == 1:
+        print("comparison")
+    else:
+        print("comparisons")
+    return 0
+
+
+def insertion_sort(el):
+    comp = 0
+    elements = el.copy()
+    nb = len(elements)
+    for i in range(1, nb):
+        j = 0
+        tmp = elements[i]
+        while j < i and tmp >= elements[j]:
+            comp += 1
+            j += 1
+        if j < i:
+            comp += 1
+            elements.pop(i)
+            elements.insert(j, tmp)
+    print("insertion sort: ", end="")
+    print(comp, end=" ")
+    if comp == 1:
+        print("comparison")
+    else:
+        print("comparisons")
+    return 0
+
+
+def bubble_sort(el):
+    comp = 0
+    elements = el[::-1]
+    for i in range(len(elements) - 1, 0, -1):
+        for j in range(0, i, 1):
+            if (float(elements[i]) < float(elements[i - 1])):
+                tmp = elements[i]
+                elements[i] = elements[i - 1]
+                elements[i - 1] = tmp
+            comp += 1
+    print("bubble sort: ", end="")
+    print("%.f" % comp, end=" ")
+    if comp == 1:
+        print("comparison")
+    else:
+        print("comparisons")
+    return 0
+
+
+def quick_sort(elements):
+    left = []
+    right = []
+    global gb_count
+
+    if not elements:
+        return []
+    for i in range(1, len(elements)):
+        gb_count += 1
+        if elements[i] >= float(elements[0]):
+            right.append(elements[i])
+        else:
+            left.append(elements[i])
+    listleft = quick_sort(left)
+    listright = quick_sort(right)
+    return listleft + [elements[0]] + listright
+
+
+def fusion(left, right):
+    res = []
+    left_idx, right_idx = 0, 0
+    global fusion_count
+
+    while left_idx < len(left) and right_idx < len(right):
+        fusion_count += 1
+        if left[left_idx] <= right[right_idx]:
+            res.append(left[left_idx])
+            left_idx += 1
+        else:
+            res.append(right[right_idx])
+            right_idx += 1
+    if left:
+        res.extend(left[left_idx:])
+    if right:
+        res.extend(right[right_idx:])
+    return res
+
+
+def fusion_sort(el):
+    comp = 0
+    if len(el) <= 1:
+        return el
+    mid = len(el) // 2
+    left = el[:mid]
+    right = el[mid:]
+    left = fusion_sort(left)
+    right = fusion_sort(right)
+    return list(fusion(left, right))
+
+
+def check_error():
+    f = open(sys.argv[1], "r")
+    elements = []
+    for line in f:
+        elements.append(line.split(" "))
+    for i in range(0, len(elements[0])):
+        if not float(elements[0][i]):
+            return -1
+    return 0
+
+
+def list_sorted(elements):
+    for el in range(0, len(elements) - 1):
+        if elements[el + 1] < elements[el]:
+            return -1
+    return 0
+
+
+def error_handling():
+    try:
+        if (sys.argv[1] == "-h"):
+            print_helper()
+            return 0
+        else:
+            array = []
+            f = open(sys.argv[1], "r")
+            elements = []
+            for line in f:
+                elements.append(line.split())
+            elementsnb = []
+            for data in elements[0]:
+                elementsnb.append(float(data))
+            if list_sorted(elementsnb) == 0:
+                get_nb_of_elements(elements)
+                print("select sort: 0 comparison")
+                print("insertion sort: 0 comparison")
+                print("bubble sort: 0 comparison")
+                print("fusion sort: 0 comparison")
+                print("quicksort: 0 comparison")
+                return 0
+            get_nb_of_elements(elements)
+            select_sort(elementsnb)
+            insertion_sort(elementsnb)
+            bubble_sort(elementsnb)
+            fusion_sort(elementsnb)
+            print("fusion sort: ", end="")
+            print(fusion_count, end=" ")
+            if fusion_count == 1:
+                print("comparison")
+            else:
+                print("comparisons")
+            quick_sort(elementsnb[:])
+            print("quicksort: ", end="")
+            print(gb_count, end=" ")
+            if gb_count == 0:
+                print("comparison")
+            else:
+                print("comparisons")
+            return 0
+    except IndexError:
+        print("Error: List index out of range.")
+        return -1
+    except IOError as e:
+        print ("I/O error({}): {}".format(e.errno, e.strerror))
+        return -1
+    except ValueError:
+        print ("Could not convert data to an integer.")
+        return -1
+    except OverflowError:
+        print("Math range error.")
+        return -1
+    return 0
+
+
+if __name__ == '__main__':
+    if (error_handling() != 0):
+        exit(84)
+ 

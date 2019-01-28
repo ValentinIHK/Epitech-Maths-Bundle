@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+
+
+import sys
+import copy
+
+
+class Matrix(object):
+
+    def __init__(self, data):
+        super(Matrix, self).__init__()
+        self._grid = []
+        self.sizeX = 0
+        self.sizeY = 0
+        self.setValues(data)
+
+    def updateSize(self):
+        self.sizeY = len(self._grid)
+        self.sizeX = len(self._grid[0])
+
+    def setValues(self, data):
+        self.checkData(data)
+        self._grid = copy.deepcopy(data)
+        self.updateSize()
+
+    def dup(self):
+        return Matrix(self._grid)
+
+    def checkValueType(self, value):
+        if type(value) not in (int, float):
+            exit(84)
+
+    def checkData(self, data):
+        if not len(data):
+            exit(84)
+        sizeX = None
+        index = 0
+        for row in data:
+            if type(row) is not list:
+                print("Error type row")
+                exit(84)
+            if sizeX is None:
+                sizeX = len(row)
+            if len(row) != sizeX:
+                print("Error len of row")
+                exit(84)
+            subIndex = 0
+            for cell in row:
+                if type(cell) not in (int, float):
+                    print("Error type cell")
+                    exit(84)
+                subIndex += 1
+            index += 1
+
+    def debug(self):
+        for j in self._grid:
+            print(*j, sep=" ")
+
+    def coef(self, second):
+        if type(second) not in (int, float):
+            print("Coefficient is not valid")
+            exit(84)
+        for y in range(0, self.sizeY):
+            for x in range(0, self.sizeX):
+                self.setCell(x, y, (self.cell(x, y) * second))
+
+    def mult(self, second):
+        if type(second) in (int, float):
+            self.coef(second)
+            return
+        if type(second) is not Matrix:
+            print("Argument is not a Matrix")
+            exit(84)
+        if self.sizeX != second.sizeY:
+            print("Size differs")
+            exit(84)
+        result = []
+        for y in range(0, self.sizeY):
+            subResult = []
+            for x in range(0, second.sizeX):
+                tmp = 0
+                for index in range(0, self.sizeX):
+                    tmp += (self.cell(index, y) * second.cell(x, index))
+                subResult.append(tmp)
+            result.append(subResult)
+        self.setValues(result)
+
+    def pow(self, n):
+        if type(n) not in (int, float):
+            print("Power is not valid")
+            exit(84)
+        if n >= 1:
+            base = self.dup()
+            while n:
+                self.mult(base)
+                n -= 1
+
+    def cell(self, x, y):
+        if x < 0 or x >= self.sizeX:
+            print("Error with column index " + str(x))
+            exit(84)
+        if y < 0 or y >= self.sizeY:
+            print("Error with row index " + str(y))
+            exit(84)
+        return self._grid[y][x]
+
+    def setCell(self, x, y, value):
+        if x < 0 or x >= self.sizeX:
+            print("Error with column index " + str(x))
+            exit(84)
+        if y < 0 or y >= self.sizeY:
+            print("Error with row index " + str(y))
+            exit(84)
+        self.checkValueType(value)
+        self._grid[y][x] = value
+
+
+class Person(object):
+    def __init__(self, name, id):
+        self.friends = []
+        self.name = name
+
+    def add_friend(self, friend_name):
+        self.friends.append(friend_name)
+
+    def debug(self):
+        print(self.name)
+        print(self.friends)
+
+
+def genMatrix(network):
+    data = []
+    for p in network:
+        line = []
+        for f in network:
+            if f.name in p.friends:
+                line.append(1)
+            else:
+                line.append(0)
+        data.append(line)
+    return Matrix(data)
+
+
+def getLinksMatrix(matrix, limit):
+    try:
+        handshake = matrix.dup()
+        mult = matrix.dup()
+        power = 1
+        allMatrix = [handshake.dup()]
+        while power < limit:
+            mult.mult(matrix)
+            allMatrix.append(mult.dup())
+            power += 1
+        handshake.mult(0)
+        for x in range(0, handshake.sizeX):
+            for y in range(0, handshake.sizeY):
+                if x == y:
+                    handshake.setCell(x, y, 0)
+                    continue
+                isSet = False
+                indexMin = 0
+                for mat in allMatrix:
+                    indexMin += 1
+                    if mat.cell(x, y) != 0:
+                        handshake.setCell(x, y, indexMin)
+                        isSet = True
+                        break
+                if not isSet:
+                    handshake.setCell(x, y, 0)
+        return handshake
+    except:
+        print("Error")
+        exit(84)
+
+
+def usage():
+    print("USAGE\n\t./302separation file n or 302separation file p1 p2")
+    exit(84)
+
+
+def check_friend_path_input(network):
+    friend1 = str(sys.argv[2])
+    friend2 = str(sys.argv[3])
+    f1 = False
+    f2 = False
+    for j in range(0, len(network)):
+        if friend1 == network[j].name:
+            f1 = True
+        if friend2 == network[j].name:
+            f2 = True
+    if f1 is False:
+        return -1
+    if f2 is False:
+        return -1
+    return 0
+
+def search_friend(network, s):
+    for j in range(0, len(network)):
+        if s == network[j].name:
+            return j
+
+
+def find_friend_path(network, matrix):
+    res = "degree of separation between {0} and {1}: {2}"
+    friend1 = str(sys.argv[2])
+    friend2 = str(sys.argv[3])
+    if check_friend_path_input(network) == -1:
+        print(res.format(friend1, friend2, -1))
+        return
+    x = search_friend(network, friend1)
+    y = search_friend(network, friend2)
+    j = 0
+    if matrix.cell(x, y) >= 1:
+        print(res.format(friend1, friend2, 1))
+        return
+    if friend1 == friend2:
+        print(res.format(friend1, friend2, 0))
+        return
+    for i in range(len(network)):
+        matrix = getLinksMatrix(matrix, i)
+        if matrix.cell(x, y) >= 1:
+            break
+        j += 1
+    if j == len(network):
+        j = -1
+    print(res.format(friend1, friend2, j))
+
+
+def find_connection(network, matrix):
+    for j in network:
+        print(j.name)
+    print("")
+    matrix.debug()
+    print("")
+    limit = int(sys.argv[2])
+    if limit < 0:
+        usage()
+    matrix = getLinksMatrix(matrix, limit)
+    matrix.debug()
+    print("")
+
+
+def find_friend(list, name):
+    tmp = 0
+    for i in list:
+        if i.name == name:
+            return tmp
+        tmp += 1
+
+
+def split_and_sort(values):
+    tmp = []
+    network = []
+    for j in range(0, len(values)):
+        tmp += values[j].split(" is friends with ")
+    tmp = list(set(tmp))
+    tmp.sort()
+    for j in range(0, len(tmp)):
+        network.append(Person(tmp[j], j))
+
+    for j in range(0, len(values)):
+        tmp = values[j].split(" is friends with ")
+        i = find_friend(network, tmp[0])
+        network[i].add_friend(tmp[1])
+        i = find_friend(network, tmp[1])
+        network[i].add_friend(tmp[0])
+    return network
+
+
+def read_file(filename):
+    try:
+        with open(filename) as rawFile:
+            data = rawFile.read()
+            if not len(data):
+                exit(84)
+            tab = data.split("\n")
+            result = []
+            for item in tab:
+                if item != "":
+                    result.append(item)
+            return result
+    except:
+        exit(84)
+
+
+if __name__ == '__main__':
+    if 3 <= len(sys.argv) <= 4:
+        values = read_file(sys.argv[1])
+        network = split_and_sort(values)
+        matrix = genMatrix(network)
+        # # debug
+        # for j in range(0, len(network)):
+        #     network[j].debug()
+        # matrix.debug()
+        if len(sys.argv) == 3:
+            try:
+                int(sys.argv[2])
+            except:
+                print("Please enter valid input")
+                exit(84)
+            find_connection(network, matrix)
+        elif len(sys.argv) == 4:
+            find_friend_path(network, matrix)
+    else:
+        usage()

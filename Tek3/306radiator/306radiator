@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+
+import sys
+import math
+from decimal import Decimal
+
+sol_vector = []
+
+def usage():
+    print("USAGE")
+    print("\t./306radiator n ir jr [i j]")
+    print("DESCRIPTION")
+    print("\tn\t\tsize of the room")
+    print("\t(ir, jr)\tcoordinates of the radiator")
+    print("\t(i, j)\t\tcoordinates of a point in the room")
+    exit(84)
+
+
+def print_matrix(matrix):
+    for i in matrix:
+        for count, j in enumerate(i):
+            if count + 1 == len(i):
+                print(j)
+            else:
+                print(j, end="\t")
+
+
+def check_inputs():
+    try:
+        if int(sys.argv[1]) < 3:
+            print("Size of room must be more than 2")
+            exit(84)
+        if int(sys.argv[2]) <= 0:
+            print("Coordinate must be positive")
+            exit(84)
+        if int(sys.argv[2]) > int(sys.argv[1]):
+            print("Coordinate must be in room")
+            exit(84)
+        if int(sys.argv[3]) <= 0:
+            print("Coordinate must be positive")
+            exit(84)
+        if int(sys.argv[3]) > int(sys.argv[1]):
+            print("Coordinate must be in room")
+            exit(84)
+        if len(sys.argv) > 4:
+            if int(sys.argv[4]) <= 0:
+                print("Coordinate must be positive")
+                exit(84)
+            if int(sys.argv[4]) > int(sys.argv[1]):
+                print("Coordinate must be in room")
+                exit(84)
+            if int(sys.argv[5]) <= 0:
+                print("Coordinate must be positive")
+                exit(84)
+            if int(sys.argv[5]) > int(sys.argv[1]):
+                print("Coordinate must be in room")
+                exit(84)
+    except ValueError:
+        print("Value must be a number")
+        exit(84)
+
+#GITHUB
+
+def isLower(matrix, j):
+    tmp = j
+    for i in range(j, len(matrix)):
+        if float(matrix[i][j]) > float(matrix[tmp][j]):
+            tmp = i
+    return tmp
+
+
+def changeVector(matrix, i, j, value):
+    global sol_vector
+
+    matrix[i] = [a + b for a, b in zip(matrix[i], [x * value for x in matrix[j]])]
+    sol_vector[i] = sol_vector[i] + value * sol_vector[j]
+
+
+# ICHKOUR
+def init_matrix_line(n):
+    line = []
+    for x in range(0, n * n):
+        line.append(0.0)
+    return line
+
+
+def putMinus300(n, ir, jr):
+    tab = init_matrix_line(n)
+    offset = n * ir + jr
+    tab[offset] = -300
+    return tab
+
+
+def makeTuple(matrix, i, j):
+    global sol_vector
+    matrix[i], matrix[j] = matrix[j], matrix[i]
+
+
+def make_calc(matrix):
+    global sol_vector
+
+    for i in range(0, len(matrix) - 1):
+        j = isLower(matrix, i)
+        makeTuple(matrix, i, j)
+        sol_vector[i], sol_vector[j] = sol_vector[j], sol_vector[i]
+        for k in range(i + 1, len(matrix)):
+            changeVector(matrix, k, i, (float(matrix[k][i]) * - 1.0) / float(matrix[i][i]))
+    return matrix
+
+
+def fill_res(matrix, res):
+    for i in range(len(matrix) - 1, -1, -1):
+        for k in range(i + 1, len(matrix)):
+            sol_vector[i] = sol_vector[i] - float(matrix[i][k]) * float(res[k])
+        value = sol_vector[i] / float(matrix[i][i])
+        res[i] = value
+    return res
+
+
+def gauss(matrix):
+    n = int(sys.argv[1])
+    ir = int(sys.argv[2])
+    jr = int(sys.argv[3])
+    global sol_vector
+
+    res = init_matrix_line(n)
+    sol_vector = putMinus300(n, ir, jr)
+    matrix = make_calc(matrix)
+    return fill_res(matrix, res)
+
+
+def temperature_equation(matrix):
+    n = int(sys.argv[1])
+
+    room = [[0 for x in range(n)] for y in range(n)]
+    for i in range(1, n - 1):
+        for j in range(1, n - 1):
+            room[i][j] = 1
+
+    counter = 0
+    for i, x in enumerate(room):
+        for j, y in enumerate(x):
+            if y == 1:
+                matrix[counter][counter] = -16
+                matrix[counter][counter - 1] = 4
+                matrix[counter][counter + 1] = 4
+                matrix[counter][counter - n] = 4
+                matrix[counter][counter + n] = 4
+            counter += 1
+
+    return matrix
+
+
+def calc_matrix():
+    n = int(sys.argv[1])
+    matrix = [[0 for x in range(n ** 2)] for y in range(n ** 2)]
+    for i in range(n ** 2):
+        matrix[i][i] = 1
+
+    matrix = temperature_equation(matrix)
+
+    return matrix
+
+
+def calc_equations(matrix):
+    for i in range(0, len(matrix)):
+        for j in range(0, i):
+            print(matrix[i][j], end="\t")
+        print("")
+
+
+def radiator1():
+    matrix = calc_matrix()
+    print_matrix(matrix)
+    print()
+    tab = gauss(matrix)
+    for elem in range(0, len(tab)):
+        print(round(tab[elem] + 0.001, 1))
+
+
+def radiator2(value):
+    matrix = calc_matrix()
+    tab = gauss(matrix)
+    print(round(float(tab[value]) + 0.001, 1))
+
+
+if __name__ == '__main__':
+    if len(sys.argv) == 2 and sys.argv[1] == "-h":
+        usage()
+    elif len(sys.argv) == 4 or len(sys.argv) == 6:
+        n = int(sys.argv[1])
+        ir = int(sys.argv[2])
+        jr = int(sys.argv[3])
+
+        check_inputs()
+        if len(sys.argv) == 4:
+            radiator1()
+        elif len(sys.argv) == 6:
+            i = int(sys.argv[4])
+            j = int(sys.argv[5])
+            if (n * i + j) > n ** 2:
+                exit(84)
+            radiator2(n * i + j)
+    else:
+        usage()

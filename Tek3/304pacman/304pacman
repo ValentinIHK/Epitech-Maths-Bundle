@@ -1,0 +1,155 @@
+#!/usr/bin/python3
+
+import time
+import sys
+
+class Pacman:
+    map = []
+    sizex = 0
+    sizey = 0
+    graph = []
+
+
+    def changeMap(self):
+        walls = sys.argv[2]
+        inside = sys.argv[3]
+        tmp = []
+        for i in range(1, len(self.map) - 1):
+            str = ''
+            for j in range(1, len(self.map[i]) -1):
+                if (self.map[i][j] == 'X'):
+                    str += walls
+                elif (self.map[i][j] == '\a'):
+                    str += inside
+                else:
+                    str += self.map[i][j]
+            tmp.append(str)
+        for elem in tmp:
+            print(elem)
+
+
+    def findStart(self):
+        start = []
+        for x in range(0, len(self.map)):
+            for y in range(0, len(self.map[x])):
+                if (self.map[x][y] == 'F'):
+                    start.append(x)
+                    start.append(y)
+                    return start
+
+
+    def findEnd(self):
+        end = []
+        for x in range(0, len(self.map)):
+            for y in range(0, len(self.map)):
+                if (self.map[x][y] == 'P'):
+                    end.append(x)
+                    end.append(y)
+                    return end
+
+
+    def checkDest(self, x, y, inc):
+        if (self.map[x][y] == 'P'):
+            self.changeMap()
+            exit(0)
+        if (self.map[x][y] == '\a'):
+            tmp = ""
+            arr = []
+            for i in range(0, self.map[x].__len__()):
+                if (i == y):
+                    tmp += inc.__str__()
+                else:
+                    tmp += self.map[x][i]
+            for j in range(0, self.map.__len__()):
+                if (j == x):
+                    arr.append(tmp)
+                else:
+                    arr.append(self.map[j])
+            self.map = arr
+            return [x, y]
+        return [-1, -1]
+
+
+    def checkDestNew(self, x, y, inc):
+        return []
+
+    def remove_values_from_list(self, the_list, val):
+        return [value for value in the_list if value != val]
+
+    def findMyShit(self, graph, inc):
+        newgraph = []
+        inc += 1
+
+        if (inc > 9):
+            inc = 0
+        graph = self.remove_values_from_list(graph, [-1, -1])
+        for elem in graph:
+            newgraph.append(self.checkDest(elem[0] - 1, elem[1], inc))
+            newgraph.append(self.checkDest(elem[0], elem[1] + 1, inc))
+            newgraph.append(self.checkDest(elem[0] + 1, elem[1], inc))
+            newgraph.append(self.checkDest(elem[0], elem[1] - 1, inc))
+        self.findMyShit(newgraph, inc)
+
+
+def error_handling(content):
+    pacman = 0
+    fantom = 0
+    for elem in content:
+        for index in range(0, len(elem)):
+            if (elem[index] != 'P' and elem[index] != 'F'
+                    and elem[index] != '0' and elem[index] != '1'):
+                print("File is not valid.")
+                exit(84)
+            if (elem[index] == 'P'):
+                pacman += 1
+            if (elem[index] == 'F'):
+                fantom += 1
+        if (len(elem) != len(content[0])):
+            print("File is not valid.")
+            exit(84)
+    if (pacman != 1 or fantom != 1):
+        print("File is not valid.")
+        exit(84)
+
+def core():
+    pacman = Pacman()
+    file = open(sys.argv[1], "r")
+    content = file.read()
+    content = content.split()
+    error_handling(content)
+    newmap = []
+    strr = ''
+
+    for j in range(0, len(content[0]) + 2):
+        strr += 'X'
+    newmap.append(strr)
+    for i in range(0, len(content)):
+        str = content[i].replace('1', 'X')
+        str = str.replace('0', '\a')
+        newmap.append('X' + str + 'X')
+    newmap.append(strr)
+    pacman.map = newmap
+
+    inc = 1
+    start = pacman.findStart()
+    x = start[0]
+    y = start[1]
+    graph = []
+
+    pacman.sizey = len(pacman.map[0])  # Est et ouest
+    pacman.sizex = len(pacman.map)  # Nord et sud
+
+    graph.append(pacman.checkDest(x - 1, y, inc))
+    graph.append(pacman.checkDest(x, y + 1, inc))
+    graph.append(pacman.checkDest(x + 1, y, inc))
+    graph.append(pacman.checkDest(x, y - 1, inc))
+
+    pacman.findMyShit(graph, inc)
+
+
+if __name__ == '__main__':
+    if (sys.argv.__len__() != 4):
+        print('USAGE:')
+        print("\t./304pacman file c1 c2")
+        exit(84)
+    core()

@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+# coding=utf-8
+
+import sys
+
+# name , date de debut, date de plus tard ->
+# completer graphe avec successeurs et avoir case END
+
+# [3] date début
+# [4] date au plus tard
+# [5] difference to get between or not
+
+Dict = {}
+
+
+def usage():
+    print("USAGE:")
+    print("\t./{} file".format(sys.argv[0]))
+    exit(84)
+
+
+def algo_path(start, end, path=None):
+    if path is None:
+        path = []
+    path = path + [start]
+    if start == end:
+        return [path]
+    if start not in Dict:
+        return []
+    paths = []
+    for node in Dict[start][2]:
+        if node not in path:
+            newpaths = algo_path(node, end, path)
+            for newpath in newpaths:
+                paths.append(newpath)
+    return paths
+
+
+def new_task(task):
+    length = 0
+    paths = []
+    for key in Dict.keys():
+        tmp = algo_path(task, key)
+        if tmp:
+            paths += tmp
+    for path in paths:
+        duration = 0
+        for loc in path[1:]:
+            duration += Dict[loc][1]
+        length = max(length, duration)
+    return length
+
+
+def find_difference(duration):
+    for task in Dict:
+        next_time = duration
+        for current in Dict:
+            if task in Dict[current][2] and next_time > Dict[current][3]:
+                next_time = Dict[current][3]
+        Dict[task][5] = next_time - Dict[task][4]
+
+
+def find_duration():
+    duration = 0
+    for task in Dict:
+        Dict[task][3] = new_task(task)
+        Dict[task][4] = Dict[task][3] + Dict[task][1]
+        duration = max(duration, Dict[task][4])
+    find_difference(duration)
+    print("Total duration of construction: {} weeks".format(duration))
+    print()
+
+
+def gantt():
+    find_duration()
+    tmp = []
+    for current in Dict:
+        tmp.append([current, Dict[current][3], Dict[current][1], Dict[current][5]])
+    tmp = sorted(tmp, key=lambda elem: (elem[1], elem[2], elem[3]))
+    for elem in tmp:
+        current = elem[0]
+        if Dict[current][5] > 0:
+            print(current, "must begin between",
+                  "t=" + str(Dict[current][3]), "and",
+                  "t=" + str(Dict[current][3] + Dict[current][5]))
+        else:
+            print(current, "must begin at", "t=" + str(Dict[current][3]))
+    print()
+    for elem in tmp:
+        current = elem[0]
+        print(current + "\t" + "(" + str(Dict[current][5])
+              + ")" + "\t" + str(" " * Dict[current][3])
+              + str("=" * Dict[current][1]))
+
+
+def core():
+    try:
+        file = open(sys.argv[1], "r", encoding = 'ISO-8859-1')
+    except:
+        print("File not exist.")
+        exit(84)
+
+    content = file.readlines()
+    content = [item.strip() for item in content]
+
+    for x in content:
+        line = x.split(';')
+        
+        if len(line) < 3:
+            print("Not enough element in CSV")
+            exit(84)
+        # if len(line[0]) != 3:
+        #     print("First element in CSV must be of length 3")
+        #     exit(84)
+
+        tmp = [line[1]]
+        try:
+            tmp.append(int(line[2]))
+        except:
+            print("Value must be int")
+            exit(84)
+        tmp.append(line[3:])
+        tmp.extend((0, 0, 0))
+        if line[0] in Dict:
+            print("Error Graph")
+            exit(84)
+        Dict[line[0]] = tmp
+
+    first_elem = []
+    for x in Dict.values():
+        # print(x[2])
+        if x[2] == [''] or x[2] == []:
+            first_elem.append(x)
+            
+    if not first_elem:
+        print("There is no begining")
+        exit(84)
+        
+    gantt()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        usage()
+    core()
